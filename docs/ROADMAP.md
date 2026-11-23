@@ -1,8 +1,9 @@
 # AutomationKitBundle roadmap
 
-Design contract: [CONTRACT.md](CONTRACT.md) (contract 254-AK v0.1, awaiting the owner's Q-AK answers). Every slice is
-one pull request on `nowo-tech/AutomationKitBundle`, merged with CI green, followed by its tag. Nothing is built before
-the Q-AK answers are recorded in CONTRACT.md §22.
+Design contract: [CONTRACT.md](CONTRACT.md) (contract 254-AK v0.1; every Q-AK answered by the owner on 2026-11-23 as recommended). Every slice is
+one pull request on `nowo-tech/AutomationKitBundle`, merged with CI green, followed by its tag. The answers are
+recorded in CONTRACT.md §22. **Packagist:** the owner registers the package after S0 is on `main`, before the 0.1.0
+tag.
 
 Audit rule (2026-11-07 batch audits): S1 (access, tenancy, idempotency) and S5 (mail and webhooks sent by
 automations, spec 254 *Immediate audit*) get an **immediate** SEC-004 audit before their tag; the other slices are
@@ -30,6 +31,6 @@ audited in the batch before 1.0.0.
 | **S7** 1.0 | **1.0.0** | `bundle-req-audit` 100 %, SEC-004 batch audit over S0 – S6, demo polish, Beacon integration notes | REQ audit 100 %, audits pass, owner OK | Batched |
 | 1.x | 1.1+ | SmsKit `sms.send` (Q-AK-11), definition create / edit through the API (Q-AK-12), if / else branches if asked (Q-AK-2), Beacon spec 216 migration guide (Q-AK-13) | — | Per minor |
 
-## Open questions
+## Decisions
 
-Q-AK-1 … Q-AK-17 in [CONTRACT.md §21](CONTRACT.md#21-owner-questions-q-ak).
+Q-AK-1 … Q-AK-17: decided 2026-11-23, all as recommended ([CONTRACT.md §22](CONTRACT.md#22-answers)).

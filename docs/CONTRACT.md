@@ -1,8 +1,10 @@
 # Contract 254-AK: generic automation engine, rules and sequences (AutomationKitBundle). Contract v0.1
 
-Status 2026-11-23: **v0.1, design only, awaiting the owner (Q-AK, §21).** No code and no tag yet. The repository
-`nowo-tech/AutomationKitBundle` exists (public, MIT) with an initial README only. Code follows this contract slice by
-slice ([ROADMAP.md](ROADMAP.md)), starting with S0 (scaffold), once the owner has answered the questions in §21.
+Status 2026-11-23: **v0.1, accepted.** The owner answered every Q-AK question on 2026-11-23 with its recommendation
+(§21, §22). No code and no tag yet. The repository `nowo-tech/AutomationKitBundle` exists (public, MIT) with an
+initial README only. Code follows this contract slice by slice ([ROADMAP.md](ROADMAP.md)), starting with S0
+(scaffold). **Packagist:** the owner registers `nowo-tech/automation-kit-bundle` on Packagist after S0 is on `main`,
+before the first tag (0.1.0 after S1, Q-AK-17).
 
 - **Approval.** Beacon spec 254 *CRM HubSpot parity*, owner decision **D-20261123-11**, question **Q-254-7** (2026-11-23):
   create `nowo-tech/AutomationKitBundle` (Composer `nowo-tech/automation-kit-bundle`) as a public repo, contract
@@ -766,26 +768,49 @@ F-3), depending on this bundle's public SPIs only.
 
 ## 21. Owner questions (Q-AK)
 
-| # | Question | Options | Recommendation |
+All seventeen were answered by the owner on 2026-11-23: every recommendation accepted (§22). The options stay below as
+history.
+
+| # | Question | Options (kept as history) | Recommendation → decision |
 | --- | --- | --- | --- |
-| Q-AK-1 | Where does the sequence engine live? CrmKit's roadmap F-3 lists `SequenceStep`, `SendingWindow`, `DailyCap`, `EnrolmentStopReason` as CrmKit VOs | (a) generic enrolments, timed steps, windows, caps and stop rules in AutomationKit; CrmKit ships the mailbox e-mail action, stop signals and its UI entry points; (b) sequences entirely in CrmKit, AutomationKit only rules | **(a)**: TaskBoard, Uptime and target projects also need "N timed steps per record"; CrmKit F-3 then names the AutomationKit VOs instead of its own (a CrmKit roadmap edit) |
-| Q-AK-2 | Step model in 1.0 | (a) ordered step list with `gate` (if not → end / continue / jump to a later label) and `wait_until`; (b) if / else branches with nested lists; (c) free graph with parallel paths | **(a)**: covers FR-060 – FR-062 and the scenario of spec 254, keeps the cycle check and the UI simple; (b) as a 1.x minor if a consumer needs it |
-| Q-AK-3 | Condition language | (a) structured tree (`all` / `any` / `not` + registered evaluators), built by the UI; (b) extract WorkflowBundle's closed `GuardExpression` DSL to a small shared package and use it for text conditions; (c) Symfony ExpressionLanguage | **(a)** in 1.0 (UI-built, maps to CrmKit segment rules, no parser to audit); (b) later if text conditions are asked for. Not (c): too open (function calls) |
-| Q-AK-4 | Who does an automation act as? | (a) its author (last person to activate it), re-checked before every action (Beacon spec 216); (b) also allow a tenant "system" actor with a dedicated permission set | **(a)** only in 1.0: every change has a responsible person and loses power with them; (b) can be added later behind `operate` |
-| Q-AK-5 | Delay mechanism | (a) stored due rows + a 1-minute scheduler tick; (b) Messenger `DelayStamp` | **(a)**: survives edits, pauses, erasure and transports without long delays; precision ±1 minute |
-| Q-AK-6 | Delivery guarantee for external actions (mail, webhook, notify) | (a) at least once with a stable idempotency key per step; (b) at most once (mark done before calling, never retry) | **(a)**: MailKit, NotifyKit and webhook receivers dedupe on the key; (b) loses mail on a transient failure |
-| Q-AK-7 | Retention | (a) runs 30 days, ended enrolments 90 days, anonymous daily stats 400 days; (b) runs 90 days | **(a)** (Beacon spec 216 runs: 30 days), configurable 1–365 |
-| Q-AK-8 | Global kill switch and pending steps | (a) hold: steps stay due and resume when switched off, with an operator action to discard older ones; (b) cancel every pending step | **(a)**: an operator stopping a bad deploy should not lose a week of sequence progress; discarding is explicit |
-| Q-AK-9 | Subject erasure | (a) delete runs, steps and enrolments of the subject, keep anonymous daily counts; (b) anonymise the subject id and keep the rows | **(a)**: nothing left to link; the counts keep the reports |
-| Q-AK-10 | "Every run audited" (FR-061) | (a) the run log is the per-run audit; AuditKit gets definition changes, manual enrolments, cancellations and kill switches; per-run forwarding opt-in; (b) one AuditKit entry per run | **(a)**: AuditKit volume stays sane at 500 runs / hour / tenant |
-| Q-AK-11 | SMS action (SmsKit) | (a) 1.x bridge after 1.0, off by default, consent port mandatory; (b) in 1.0 | **(a)**: spec 254 keeps SMS from records out of scope v1; no consumer yet |
-| Q-AK-12 | Public API scope in 1.0 | (a) read, pause / activate, cancel, enrol / unenrol, dry run; definitions edited in the UI only; (b) also create / edit definitions | **(a)**: definition editing through the API needs the param-schema contract to be stable first; MCP tools follow the same scope |
-| Q-AK-13 | Migrate Beacon's spec 216 task automations to AutomationKit + the TaskBoard bridge | (a) yes, after 1.0, Beacon picks the release; (b) no, keep two engines | **(a)**: one engine, one run log, one kill switch; spec 216 is the proof that the engine is generic |
-| Q-AK-14 | Built-in `http.webhook` action | (a) yes, off by default, OutboundUrlGuard only, HMAC signature with a per-tenant secret from the host's secret port; (b) no webhooks in 1.0 | **(a)**: FR-060 lists "call a webhook through OutboundUrlGuard" |
-| Q-AK-15 | Business-day windows and holidays | (a) weekdays + hours + time zone built in, holidays through the optional WorkingTime bridge; (b) weekdays and hours only | **(a)** |
-| Q-AK-16 | Default limits | Chain depth 3, 500 runs / tenant / hour, 10 runs / automation × subject / day, 100 / 25 active automations per tenant / context, 50 steps, 200 mails / sender / day, bulk enrol 1,000 | **Accept** (Beacon spec 216 values where they exist), all configurable and runtime settings |
-| Q-AK-17 | First tag | (a) 0.1.0 after S1 (engine core, after its immediate audit) so CrmKit can build F-3 triggers early; (b) first tag only after S5 | **(a)**; Packagist registration by the owner after S0, before the tag |
+| Q-AK-1 | Where does the sequence engine live? CrmKit's roadmap F-3 lists `SequenceStep`, `SendingWindow`, `DailyCap`, `EnrolmentStopReason` as CrmKit VOs | (a) generic enrolments, timed steps, windows, caps and stop rules in AutomationKit; CrmKit ships the mailbox e-mail action, stop signals and its UI entry points; (b) sequences entirely in CrmKit, AutomationKit only rules | Decision 2026-11-23: **(a)**: TaskBoard, Uptime and target projects also need "N timed steps per record"; CrmKit F-3 then names the AutomationKit VOs instead of its own (a CrmKit roadmap edit) |
+| Q-AK-2 | Step model in 1.0 | (a) ordered step list with `gate` (if not → end / continue / jump to a later label) and `wait_until`; (b) if / else branches with nested lists; (c) free graph with parallel paths | Decision 2026-11-23: **(a)**: covers FR-060 – FR-062 and the scenario of spec 254, keeps the cycle check and the UI simple; (b) as a 1.x minor if a consumer needs it |
+| Q-AK-3 | Condition language | (a) structured tree (`all` / `any` / `not` + registered evaluators), built by the UI; (b) extract WorkflowBundle's closed `GuardExpression` DSL to a small shared package and use it for text conditions; (c) Symfony ExpressionLanguage | Decision 2026-11-23: **(a)** in 1.0 (UI-built, maps to CrmKit segment rules, no parser to audit); (b) later if text conditions are asked for. Not (c): too open (function calls) |
+| Q-AK-4 | Who does an automation act as? | (a) its author (last person to activate it), re-checked before every action (Beacon spec 216); (b) also allow a tenant "system" actor with a dedicated permission set | Decision 2026-11-23: **(a)** only in 1.0: every change has a responsible person and loses power with them; (b) can be added later behind `operate` |
+| Q-AK-5 | Delay mechanism | (a) stored due rows + a 1-minute scheduler tick; (b) Messenger `DelayStamp` | Decision 2026-11-23: **(a)**: survives edits, pauses, erasure and transports without long delays; precision ±1 minute |
+| Q-AK-6 | Delivery guarantee for external actions (mail, webhook, notify) | (a) at least once with a stable idempotency key per step; (b) at most once (mark done before calling, never retry) | Decision 2026-11-23: **(a)**: MailKit, NotifyKit and webhook receivers dedupe on the key; (b) loses mail on a transient failure |
+| Q-AK-7 | Retention | (a) runs 30 days, ended enrolments 90 days, anonymous daily stats 400 days; (b) runs 90 days | Decision 2026-11-23: **(a)** (Beacon spec 216 runs: 30 days), configurable 1–365 |
+| Q-AK-8 | Global kill switch and pending steps | (a) hold: steps stay due and resume when switched off, with an operator action to discard older ones; (b) cancel every pending step | Decision 2026-11-23: **(a)**: an operator stopping a bad deploy should not lose a week of sequence progress; discarding is explicit |
+| Q-AK-9 | Subject erasure | (a) delete runs, steps and enrolments of the subject, keep anonymous daily counts; (b) anonymise the subject id and keep the rows | Decision 2026-11-23: **(a)**: nothing left to link; the counts keep the reports |
+| Q-AK-10 | "Every run audited" (FR-061) | (a) the run log is the per-run audit; AuditKit gets definition changes, manual enrolments, cancellations and kill switches; per-run forwarding opt-in; (b) one AuditKit entry per run | Decision 2026-11-23: **(a)**: AuditKit volume stays sane at 500 runs / hour / tenant |
+| Q-AK-11 | SMS action (SmsKit) | (a) 1.x bridge after 1.0, off by default, consent port mandatory; (b) in 1.0 | Decision 2026-11-23: **(a)**: spec 254 keeps SMS from records out of scope v1; no consumer yet |
+| Q-AK-12 | Public API scope in 1.0 | (a) read, pause / activate, cancel, enrol / unenrol, dry run; definitions edited in the UI only; (b) also create / edit definitions | Decision 2026-11-23: **(a)**: definition editing through the API needs the param-schema contract to be stable first; MCP tools follow the same scope |
+| Q-AK-13 | Migrate Beacon's spec 216 task automations to AutomationKit + the TaskBoard bridge | (a) yes, after 1.0, Beacon picks the release; (b) no, keep two engines | Decision 2026-11-23: **(a)**: one engine, one run log, one kill switch; spec 216 is the proof that the engine is generic |
+| Q-AK-14 | Built-in `http.webhook` action | (a) yes, off by default, OutboundUrlGuard only, HMAC signature with a per-tenant secret from the host's secret port; (b) no webhooks in 1.0 | Decision 2026-11-23: **(a)**: FR-060 lists "call a webhook through OutboundUrlGuard" |
+| Q-AK-15 | Business-day windows and holidays | (a) weekdays + hours + time zone built in, holidays through the optional WorkingTime bridge; (b) weekdays and hours only | Decision 2026-11-23: **(a)** |
+| Q-AK-16 | Default limits | Chain depth 3, 500 runs / tenant / hour, 10 runs / automation × subject / day, 100 / 25 active automations per tenant / context, 50 steps, 200 mails / sender / day, bulk enrol 1,000 | Decision 2026-11-23: **Accept** (Beacon spec 216 values where they exist), all configurable and runtime settings |
+| Q-AK-17 | First tag | (a) 0.1.0 after S1 (engine core, after its immediate audit) so CrmKit can build F-3 triggers early; (b) first tag only after S5 | Decision 2026-11-23: **(a)**; Packagist registration by the owner after S0, before the tag |
 
 ## 22. Answers
 
-None yet. Answers are recorded here with their date, and decisions are mirrored in the monorepo decision log.
+**2026-11-23, owner:** Q-AK-1 … Q-AK-17 accepted as recommended:
+
+| # | Decision |
+| --- | --- |
+| Q-AK-1 | (a) generic sequence engine in AutomationKit; CrmKit ships the mailbox e-mail action, stop signals and UI entry points (CrmKit F-3 roadmap to reference AutomationKit's VOs) |
+| Q-AK-2 | (a) ordered step list with `gate` and `wait_until` in 1.0; if / else branches a possible 1.x minor |
+| Q-AK-3 | (a) structured condition tree with registered evaluators |
+| Q-AK-4 | (a) automations act as their author, re-checked before every action |
+| Q-AK-5 | (a) stored due rows + 1-minute scheduler tick |
+| Q-AK-6 | (a) at least once with a stable idempotency key per step |
+| Q-AK-7 | (a) runs 30 days, ended enrolments 90 days, anonymous daily stats 400 days (configurable 1–365) |
+| Q-AK-8 | (a) global kill switch holds pending steps; explicit operator discard |
+| Q-AK-9 | (a) subject erasure deletes runs, steps and enrolments; anonymous daily counts kept |
+| Q-AK-10 | (a) run log is the per-run audit; AuditKit for definition changes, manual operations and kill switches; per-run forwarding opt-in |
+| Q-AK-11 | (a) SmsKit `sms.send` as a 1.x bridge, off by default, consent port mandatory |
+| Q-AK-12 | (a) public API 1.0: read, pause / activate, cancel, enrol / unenrol, dry run; no definition editing |
+| Q-AK-13 | (a) migrate Beacon spec 216 task automations after 1.0; Beacon picks the release |
+| Q-AK-14 | (a) built-in `http.webhook`, off by default, OutboundUrlGuard only, HMAC with a per-tenant secret from the host's secret port |
+| Q-AK-15 | (a) weekdays + hours + time zone built in; holidays through the optional WorkingTime bridge |
+| Q-AK-16 | Default limits accepted (all configurable runtime settings) |
+| Q-AK-17 | (a) first tag 0.1.0 after S1 (after its immediate audit); Packagist registration by the owner after S0, before that tag |
